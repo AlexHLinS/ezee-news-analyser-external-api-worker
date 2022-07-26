@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# tokens and other secrets
+*.token
+
+# test python scripts
+_test*.py
