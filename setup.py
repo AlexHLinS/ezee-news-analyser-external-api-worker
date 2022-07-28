@@ -20,7 +20,8 @@ setup(name='ezee_naeaw',
           'razdel>=0.5.0',
           'translate>=3.6.1',
           'requests>=2.28.0',
-          'ujson>=5.3.0'
+          'ujson>=5.3.0',
+          'slovnet>=0.5.0'
       ],
       include_package_data=True,
       zip_safe=False)

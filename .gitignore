@@ -133,3 +133,4 @@ dmypy.json
 
 # test python scripts
 _test*.py
+_test*.ipynb

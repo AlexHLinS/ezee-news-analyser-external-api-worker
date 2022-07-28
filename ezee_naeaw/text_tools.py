@@ -1,5 +1,7 @@
 from typing import Dict
 
+import requests
+import ujson
 from slovnet.sent import sentenize
 from translate import Translator
 
@@ -113,7 +115,7 @@ class TokenService:
 class Article:
     api_request_url = 'https://api.text.ru/post'
 
-    def __init__(self, token: str, text: str) -> str:
+    def __init__(self, token: str, text: str, is_uid_needed: bool = True) -> str:
         self.__token = token
         self.__text = text
         self.__uid = None
@@ -121,6 +123,8 @@ class Article:
         self.__antiplag_results = None
         self.__spell_results = None
         self.__seo_results = None
+        if is_uid_needed:
+            self.get_uid()
 
     @property
     def token(self) -> str | None:
@@ -159,7 +163,7 @@ class Article:
         return self.__antiplag_results
 
     @plagiat.setter
-    def plagiat(self, value:Dict):
+    def plagiat(self, value: Dict):
         self.__antiplag_results = value
 
     @property
@@ -171,11 +175,54 @@ class Article:
         self.__spell_results = value
 
     @property
-    def seo(self):
+    def seo(self) -> Dict | None:
         return self.__seo_results
 
     @seo.setter
     def seo(self, value: Dict):
         self.__seo_results = value
 
-    # TODO: Implement text.ru API interface worker
+    def get_uid(self) -> None:
+        """
+        Sending new request to text.ru service and getting new UID
+        :return:
+        """
+        answer = requests.post(url=self.api_request_url, \
+                               data={'text': self.__text, \
+                                     'userkey': self.__token, \
+                                     'visible': 'vis_on'})
+        if answer.status_code == 200:
+            answer = ujson.decode(answer.text)
+            text_uid = answer.get('text_uid', None)
+            error_code = answer.get('error_code', None)
+            error_desc = answer.get('error_desc', None)
+            if text_uid:
+                self.__uid = text_uid
+            else:
+                raise RuntimeWarning(message=f'{error_code}: {error_desc}')
+        else:
+            raise RuntimeWarning(message=f'Connection error, status code: {answer.status_code}')
+
+    def get_result(self):
+        answer = requests.post(url=self.api_request_url, \
+                               data={'uid': self.uid, \
+                                     'userkey': self.token, \
+                                     'jsonvisible': 'detail'})
+        if answer.status_code == 200:
+            answer = ujson.decode(answer.text)
+            unique = answer.get('unique', None)
+            if unique:
+                self.unique = float(unique)
+            result = answer.get('result_json', None)
+            if result:
+                self.plagiat = ujson.decode(result)
+            spell = answer.get('spell_check', None)
+            if spell:
+                self.spell = ujson.decode(spell)
+            seo = answer.get('seo_check', None)
+            if seo:
+                self.seo = ujson.decode(seo)
+            error_code = answer.get('error_code', None)
+            error_desc = answer.get('error_desc', None)
+            if error_code and error_desc:
+                raise RuntimeWarning(message=f'{error_code}: {error_desc}')
