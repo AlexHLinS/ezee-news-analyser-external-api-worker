@@ -21,7 +21,8 @@ setup(name='ezee_naeaw',
           'translate>=3.6.1',
           'requests>=2.28.0',
           'ujson>=5.3.0',
-          'slovnet>=0.5.0'
+          'slovnet>=0.5.0',
+          'newspaper3k==0.2.8'
       ],
       include_package_data=True,
       zip_safe=False)
